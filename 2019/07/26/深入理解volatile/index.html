@@ -5,15 +5,27 @@
   
 
   
-  <title>Hexo</title>
+  <title>深入理解volatile | Hexo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Hexo">
-<meta property="og:url" content="http://yoursite.com/index.html">
+  <meta name="description" content="#JMM Java 内存模型Java的内存模型指定了Java虚拟机如何与计算机的内存进行工作Java内存模型决定了一个线程对共享变量的写入何时对其他线程可见，Java内存模型定义了线程和主内存之间的抽象关系，具体如下：1、共享变量存储在主内存中，每个线程都可以访问。2、每个线程都有私有的工作内存。3、工作内存只存储该线程对共享变量的副本。4、线程不能直接操作主内存，只有先操作了工作内存之后才能写入">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解volatile">
+<meta property="og:url" content="http://yoursite.com/2019/07/26/深入理解volatile/index.html">
 <meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="#JMM Java 内存模型Java的内存模型指定了Java虚拟机如何与计算机的内存进行工作Java内存模型决定了一个线程对共享变量的写入何时对其他线程可见，Java内存模型定义了线程和主内存之间的抽象关系，具体如下：1、共享变量存储在主内存中，每个线程都可以访问。2、每个线程都有私有的工作内存。3、工作内存只存储该线程对共享变量的副本。4、线程不能直接操作主内存，只有先操作了工作内存之后才能写入">
 <meta property="og:locale" content="default">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-f6fa34679930e9c5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-d1850faa3ea16741.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-1c1459c4595a142e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-c559c153d83f7a5b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-5ec72c9d6d40d6fc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-5d538923e3a0d23e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-90a36fe1093a17f6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2019-08-02T06:10:56.851Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Hexo">
+<meta name="twitter:title" content="深入理解volatile">
+<meta name="twitter:description" content="#JMM Java 内存模型Java的内存模型指定了Java虚拟机如何与计算机的内存进行工作Java内存模型决定了一个线程对共享变量的写入何时对其他线程可见，Java内存模型定义了线程和主内存之间的抽象关系，具体如下：1、共享变量存储在主内存中，每个线程都可以访问。2、每个线程都有私有的工作内存。3、工作内存只存储该线程对共享变量的副本。4、线程不能直接操作主内存，只有先操作了工作内存之后才能写入">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/15507353-f6fa34679930e9c5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
   
     <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
   
@@ -60,47 +72,7 @@
   </div>
 </header>
       <div class="outer">
-        <section id="main">
-  
-    <article id="post-test" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2019/08/02/test/" class="article-date">
-  <time datetime="2019-08-02T05:02:04.000Z" itemprop="datePublished">2019-08-02</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/08/02/test/">test</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public static void main(String[] args)&#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://yoursite.com/2019/08/02/test/" data-id="cjytn78pq0000r8s61d80nwnl" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-深入理解volatile" class="article article-type-post" itemscope itemprop="blogPost">
+        <section id="main"><article id="post-深入理解volatile" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2019/07/26/深入理解volatile/" class="article-date">
   <time datetime="2019-07-26T07:48:29.727Z" itemprop="datePublished">2019-07-26</time>
@@ -113,8 +85,8 @@
       <header class="article-header">
         
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/07/26/深入理解volatile/">深入理解volatile</a>
+    <h1 class="article-title" itemprop="name">
+      深入理解volatile
     </h1>
   
 
@@ -229,11 +201,23 @@
     </footer>
   </div>
   
-</article>
-
+    
+<nav id="article-nav">
+  
+    <a href="/2019/08/02/test/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          test
+        
+      </div>
+    </a>
+  
+  
+</nav>
 
   
-
+</article>
 
 </section>
         
