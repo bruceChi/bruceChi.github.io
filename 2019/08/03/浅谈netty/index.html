@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="utf-8">
+  
+
+  
+  <title>浅谈netty | Stay hungry Stay young</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="要理解netty，我们需要先了解I/O Models和JAVA NIO，还有观察者模式、多Reactors线程模型等等这些内容。 I/O Models在这里我们先要回顾一些操作系统的IO相关基础知识：  用户空间与内核空间:现在操作系统都是采用虚拟存储器，那么对32位操作系统而言，它的寻址空间（虚拟存储空间）为4G（2的32次方）。操作系统的核心是内核，独立于普通的应用程序，可以访问受保护的内存空">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈netty">
+<meta property="og:url" content="http://yoursite.com/2019/08/03/浅谈netty/index.html">
+<meta property="og:site_name" content="Stay hungry Stay young">
+<meta property="og:description" content="要理解netty，我们需要先了解I/O Models和JAVA NIO，还有观察者模式、多Reactors线程模型等等这些内容。 I/O Models在这里我们先要回顾一些操作系统的IO相关基础知识：  用户空间与内核空间:现在操作系统都是采用虚拟存储器，那么对32位操作系统而言，它的寻址空间（虚拟存储空间）为4G（2的32次方）。操作系统的核心是内核，独立于普通的应用程序，可以访问受保护的内存空">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-decfd9efba7065b9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-34d279e2a714d524.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-824805ab3202d48a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-76d334e3648b45d1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-46f7363c8f48887d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-fb6ab70d35a5ec6e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-852aeb1306cad363.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-b31d784b48dadc3d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-260d5035da805295.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-d28a4134e88df482.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-ce1f5858d4ae790b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-55e3375574c52e80.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-443bc0e11a9eba93.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-e7685f3c6ba9bcbd.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-5df6e05a83dc5945.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-db75d724aa5f6db9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-5bb1f9485cb1a07b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-a53c90380c390c61.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-07ddccf1a37c26a5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-e2cb5f543d7d9ae7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-3c376476b20d784f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-86328d64eb66fe59.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-f4ab71b11b50b707.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-ef58694de510130b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-ba866ab661f4a1b3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-1ce0568318af538e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-0fbe146884fe1a30.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-73f9d820cd920b58.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-8e50fc6be26fbef5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-607d208786174743.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-3a5b02adeaa394ff.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-814edca973a0e5e2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-c0899726b4bf7b4f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2019-08-03T10:14:36.569Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="浅谈netty">
+<meta name="twitter:description" content="要理解netty，我们需要先了解I/O Models和JAVA NIO，还有观察者模式、多Reactors线程模型等等这些内容。 I/O Models在这里我们先要回顾一些操作系统的IO相关基础知识：  用户空间与内核空间:现在操作系统都是采用虚拟存储器，那么对32位操作系统而言，它的寻址空间（虚拟存储空间）为4G（2的32次方）。操作系统的核心是内核，独立于普通的应用程序，可以访问受保护的内存空">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/15507353-decfd9efba7065b9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="Stay hungry Stay young" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+</html>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Stay hungry Stay young</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-浅谈netty" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/08/03/浅谈netty/" class="article-date">
+  <time datetime="2019-08-03T10:12:33.354Z" itemprop="datePublished">2019-08-03</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      浅谈netty
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>要理解netty，我们需要先了解I/O Models和JAVA NIO，还有观察者模式、多Reactors线程模型等等这些内容。</p>
+<h1 id="I-O-Models"><a href="#I-O-Models" class="headerlink" title="I/O Models"></a>I/O Models</h1><p>在这里我们先要回顾一些操作系统的IO相关基础知识：</p>
+<ul>
+<li>用户空间与内核空间:<br>现在操作系统都是采用虚拟存储器，那么对32位操作系统而言，它的寻址空间（虚拟存储空间）为4G（2的32次方）。操作系统的核心是内核，独立于普通的应用程序，可以访问受保护的内存空间，也有访问底层硬件设备的所有权限。为了保证用户进程不能直接操作内核（kernel），保证内核的安全，操心系统将虚拟空间划分为两部分，一部分为内核空间，一部分为用户空间。针对linux操作系统而言，将最高的1G字节（从虚拟地址0xC0000000到0xFFFFFFFF），供内核使用，称为内核空间，而将较低的3G字节（从虚拟地址0x00000000到0xBFFFFFFF），供各个进程使用，称为用户空间。</li>
+<li>系统调用：<br>Linux/Unix内核中设置了一组用于实现各种系统功能的子程序，称为系统调用。用户可以通过系统调用命令在自己的应用程序中调用它们。从某种角度来看，系统调用和普通的函数调用非常相似。区别仅仅在于，系统调用由操作系统核心提供，运行于核心态；而普通的函数调用由函数库或用户自己提供，运行于用户态。</li>
+<li>进程切换：</li>
+</ul>
+<p>1.为了控制进程的执行，内核必须有能力挂起正在CPU上运行的进程，并恢复以前挂起的某个进程的执行。这种行为被称为进程切换。因此可以说，任何进程都是在操作系统内核的支持下运行的，是与内核紧密相关的。<br> 2.消耗CPU资源。</p>
+<ul>
+<li>进程的阻塞:</li>
+</ul>
+<p>1.正在执行的进程，由于期待的某些事件未发生，如请求系统资源失败、等待某种操作的完成、新数据尚未到达或无新工作做等，则由系统自动执行阻塞原语(Block)，使自己由运行状态变为阻塞状态。可见，进程的阻塞是进程自身的一种主动行为，也因此只有处于运行态的进程（获得CPU），才可能将其转为阻塞状态。<br>2.当进程进入阻塞状态，不消耗CPU资源。</p>
+<ul>
+<li>文件描述符：</li>
+</ul>
+<p>1.文件描述符（File descriptor）是计算机科学中的一个术语，是一个用于表述指向文件的引用的抽象化概念。<br>2.文件描述符在形式上是一个非负整数。实际上，它是一个索引值，指向内核为每一个进程所维护的该进程打开文件的记录表。当程序打开一个现有文件或者创建一个新文件时，内核向进程返回一个文件描述符。在程序设计中，一些涉及底层的程序编写往往会围绕着文件描述符展开。但是文件描述符这一概念往往只适用于UNIX、Linux这样的操作系统。</p>
+<ul>
+<li>缓存 I/O：</li>
+</ul>
+<p>1.缓存 I/O 又被称作标准 I/O，大多数文件系统的默认 I/O 操作都是缓存 I/O。在 Linux 的缓存 I/O 机制中，操作系统会将 I/O 的数据缓存在文件系统的页缓存（ page cache ）中，也就是说，数据会先被拷贝到操作系统内核的缓冲区中，然后才会从操作系统内核的缓冲区拷贝到应用程序的地址空间。<br>2.缺点：数据在传输过程中需要在应用程序地址空间和内核进行多次数据拷贝操作，这些数据拷贝操作所带来的 CPU 以及内存开销是非常大的。</p>
+<p><strong>当一个输入（input）操作发生时，这里会经历两个不同的阶段：</strong><br>1.等待数据就绪。<br>2.将数据从内核的缓冲区拷贝到进程中。</p>
+<p><strong>下面是5种IO模型</strong><br>      1.blocking I/O<br>      2.nonblocking I/O<br>      3.I/O multiplexing (select and poll)<br>      4.signal driven I/O (SIGIO)<br>      5.asynchronous I/O (the POSIX aio_functions)</p>
+<h5 id="Blocking-I-O-Model"><a href="#Blocking-I-O-Model" class="headerlink" title="Blocking I/O Model"></a>Blocking I/O Model</h5><p><img src="https://upload-images.jianshu.io/upload_images/15507353-decfd9efba7065b9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>整个读取IO的数据是同步、阻塞的。</p>
+<h5 id="Nonblocking-I-O-Model"><a href="#Nonblocking-I-O-Model" class="headerlink" title="Nonblocking I/O Model"></a>Nonblocking I/O Model</h5><p><img src="https://upload-images.jianshu.io/upload_images/15507353-34d279e2a714d524.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>当一个应用程序像这样对一个非阻塞描述符循环调用recvfrom时，我们称之为轮询(polling)，应用程序持续轮询内核，以查看某个操作是否就绪，这么做往往耗费大量CPU时间。通常是在专门提供某一种功能的系统中才有</p>
+<h5 id="I-O-Multiplexing-Model"><a href="#I-O-Multiplexing-Model" class="headerlink" title="I/O Multiplexing Model"></a>I/O Multiplexing Model</h5><p><img src="https://upload-images.jianshu.io/upload_images/15507353-824805ab3202d48a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<ul>
+<li>在IO复用中，我们调用select或者poll 然后在这两个系统调用中的一个中阻塞，而不是阻塞在真实的I/O系统调用上。</li>
+<li>优势：跟阻塞I/O模型比较使用select我们可以等待多个描述符就绪，也就是一个线程可以处理多个描述符。<h5 id="signal-driven-I-O-SIGIO"><a href="#signal-driven-I-O-SIGIO" class="headerlink" title="signal driven I/O (SIGIO)"></a>signal driven I/O (SIGIO)</h5><img src="https://upload-images.jianshu.io/upload_images/15507353-76d334e3648b45d1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></li>
+<li>我们也可以用信号，让内核在描述符就绪时发送SIGIO信号通知我们。</li>
+<li>优势：等待数据报到达期间进程不被阻塞。主循环可以继续执行，只要等待来自信号处理函数的通知（既可以是数据已准备好被处理，也可以是数据报已准备好被读取。）<h5 id="asynchronous-I-O-the-POSIX-aio-functions"><a href="#asynchronous-I-O-the-POSIX-aio-functions" class="headerlink" title="asynchronous I/O (the POSIX aio_functions)"></a>asynchronous I/O (the POSIX aio_functions)</h5>告知内核启动某个操作，并让内核在整个操作（包括将数据从内核复制到我们自己的缓冲区）完成后通知我们。信号驱动式I/O是由内核通知我们何时可以启动一个I/O操作，而异步I/O模型是由内核通知我们I/O操作何时完成。通过状态、通知和回调来通知调用者的输入输出操作。</li>
+</ul>
+<p><img src="https://upload-images.jianshu.io/upload_images/15507353-46f7363c8f48887d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<ul>
+<li>优势：<br>我们调用aio_read函数，给内核传递描述符、缓冲区指针、缓冲区大小和文件偏移，病告诉内核当整个操作完成时如何通知我们。该系统调用立即返回，而且在等待I/O完成期间，我们的进程不被阻塞。<h5 id="各种I-O模型的比较"><a href="#各种I-O模型的比较" class="headerlink" title="各种I/O模型的比较"></a>各种I/O模型的比较</h5><img src="https://upload-images.jianshu.io/upload_images/15507353-fb6ab70d35a5ec6e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></li>
+<li>前4中模型的主要区别在于第一阶段，因为它们的第二阶段是一样的：在数据从内核复制到调用者的缓冲区期间，进程阻塞于recvfrom调用。</li>
+<li>同步I/O操作导致请求进程阻塞，直到I/O操作完成，异步I/O操作不导致请求进程阻塞。前四种都是同步I/O模型，因为其中的I/O操作recvfrom讲阻塞进程。只有异步I/O模型与POSIX定义的异步I/O相匹配。</li>
+</ul>
+<p>随着linux内核的不断发展，IO也在不断发展，所以后面有了IO多路复用模型。IO 多路复用是通过linux内核的select、poll、epoll这些来完成的。</p>
+<h6 id="select函数"><a href="#select函数" class="headerlink" title="select函数"></a>select函数</h6><p>该函数允许进程指示内核等待多个事件中的任何一个发生，并只在有一个或多个事件发生或经历一段指定的时间后才唤醒它。<br>       例如：我们可以调用select，告知内核仅在下列情况发生时才返回：</p>
+<ul>
+<li>集合{1,4,5}中的任何描述符准备好读；</li>
+<li>集合{2,7}中任何描述符准备好写；</li>
+<li>集合{1,4}中的任何描述符有异常条件待处理；</li>
+<li>已经历了10.2秒<br>下面是select函数的简单结构<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;sys/select.h&gt;</span><br><span class="line">#include &lt;sys/time.h&gt;</span><br><span class="line"></span><br><span class="line">//返回：若有就绪描述符则为其数目，若超时则为0，若出错则为-1</span><br><span class="line">int select(int maxfdp1,fd_set *readset,fd_set *writeset, fd_set *exceptest,const struct timeval *timeout);</span><br><span class="line"></span><br><span class="line">struct timeval&#123;</span><br><span class="line">    long tv_sec;       /* seconds */</span><br><span class="line">    long tv_used;    /* microseconds */</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<p>select以后最大的优势是用户可以在一个线程内同时处理多个socket的IO请求<br>pselect : 能够处理信号阻塞并提供了更高时间分辨率的select的增强版本 </p>
+<h6 id="poll函数"><a href="#poll函数" class="headerlink" title="poll函数"></a>poll函数</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;poll.h&gt;</span><br><span class="line"></span><br><span class="line">//返回：若有就绪描述符则为其数目，若超时则为0，若出错则为-1</span><br><span class="line">int poll (struct pollfd *fdarray, unsigned long nfds, int timeout);</span><br><span class="line"></span><br><span class="line">//一个pollfd结构体表示一个被监视的文件描述符</span><br><span class="line">struct pollfd &#123;</span><br><span class="line">int fd; /* descriptor to check */</span><br><span class="line">short events; /* events of interest on fd */</span><br><span class="line">short revents; /* events that occurred on fd */</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>select机制的问题<br>     1.每次调用select，都需要把fd_set集合从用户态拷贝到内核态，如果fd_set集合很大时，那这个开销也很大<br>     2.同时每次调用select都需要在内核遍历传递进来的所有fd_set，如果fd_set集合很大时，那这个开销也很大<br>     3.为了减少数据拷贝带来的性能损坏，内核对被监控的fd_set集合大小做了限制，并且这个是通过宏控制的，大小不可改变(限制为1024)    【poll用数组结构体解决了大小限制问题】</p>
+<p>它没有最大连接数的限制，原因是它是基于链表来存储的，但是同样有一些缺点：</p>
+<ul>
+<li>大量的fd的数组被整体复制于用户态和内核地址空间之间，而不管这样的复制是不是有意义。</li>
+<li>poll还有一个特点是“水平触发”，如果报告了fd后，没有被处理，那么下次poll时会再次报告该fd。</li>
+</ul>
+<h6 id="epoll函数"><a href="#epoll函数" class="headerlink" title="epoll函数"></a>epoll函数</h6><p>epoll在Linux2.6内核正式提出，是基于事件驱动的I/O方式，相对于select来说，epoll没有描述符个数限制，使用一个文件描述符管理多个描述符，将用户关心的文件描述符的事件存放到内核的一个事件表中，这样在用户空间和内核空间的copy只需一次。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">int epoll_create(int size);  // epoll_create 函数创建一个epoll句柄</span><br><span class="line">int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event); // epoll_ctl 函数注册要监听的事件类型</span><br><span class="line">//  epoll_wait 函数等待事件的就绪，成功时返回就绪的事件数目，调用失败时返回 -1，等待超时返回 0</span><br><span class="line">int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);</span><br><span class="line">struct epoll_event &#123;    </span><br><span class="line">    __uint32_t events;  /* Epoll events */    </span><br><span class="line">    epoll_data_t data;  /* User data variable */&#125;;</span><br><span class="line"></span><br><span class="line">typedef union epoll_data &#123;    </span><br><span class="line">   void *ptr;   </span><br><span class="line">    int fd;    </span><br><span class="line">    __uint32_t u32;   </span><br><span class="line">    __uint64_t u64;</span><br><span class="line">&#125; epoll_data_t;</span><br></pre></td></tr></table></figure>
+
+<p>epoll优点：<br>1.没有最大并发连接的限制，能打开的FD的上限远大于1024（1G的内存上能监听约10万个端口）；<br>2.效率提升，不是轮询的方式，不会随着FD数目的增加效率下降。只有活跃可用的FD才会调用callback函数；即Epoll最大的优点就在于它只管你“活跃”的连接，而跟连接总数无关，因此在实际的网络环境中，Epoll的效率就会远远高于select和poll。</p>
+<ol start="3">
+<li>内存拷贝，利用mmap()文件映射内存加速与内核空间的消息传递；即epoll使用mmap减少复制开销。</li>
+</ol>
+<p>它能显著提高程序在大量并发连接中只有少量活跃的情况下的系统CPU利用率。原因就是获取事件的时候，它无须遍历整个被侦听的描述符集，只要遍历那些被内核IO事件异步唤醒而加入Ready队列的描述符集合就行了。</p>
+<p>对比：<br><img src="https://upload-images.jianshu.io/upload_images/15507353-852aeb1306cad363.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h6 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h6><p>综上，在选择select，poll，epoll时要根据具体的使用场合以及这三种方式的自身特点。</p>
+<p>1.表面上看epoll的性能最好，但是在连接数少并且连接都十分活跃的情况下，select和poll的性能可能比epoll好，毕竟epoll的通知机制需要很多函数回调。</p>
+<p>2.select低效是因为每次它都需要轮询。但低效也是相对的，视情况而定，也可通过良好的设计改善。</p>
+<h1 id="JAVA-NIO"><a href="#JAVA-NIO" class="headerlink" title="JAVA NIO"></a>JAVA NIO</h1><p>Java NIO提供了与标准IO不同的IO工作方式：</p>
+<ul>
+<li><p><strong><em>Channels and Buffers（通道和缓冲区）：</em></strong></p>
+<pre><code>标准的IO基于字节流和字符流进行操作的，而NIO是基于通道（Channel）和缓冲区（Buffer）进行操作，数据总是从通道读取到缓冲区中，或者从缓冲区写入到通道中。</code></pre></li>
+<li><p><strong><em>非阻塞IO（Non-blocking IO）：</em></strong></p>
+<pre><code>Java NIO可以让执行非阻塞IO，例如：当线程从通道读取数据到缓冲区时，线程还是可以进行其他事情。当数据被写入到缓冲区时，线程可以继续处理它。从缓冲区写入通道也类似。</code></pre></li>
+<li><p><strong><em>选择器（Selectors）：</em></strong></p>
+<pre><code>Java NIO引入了选择器的概念，选择器用于监听多个通道的事件（比如：连接打开，数据到达）。因此，单个的线程可以监听多个数据通道。</code></pre></li>
+</ul>
+<p>java nio 的几个重要组件：<br><img src="https://upload-images.jianshu.io/upload_images/15507353-b31d784b48dadc3d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h3 id="Channels-and-Buffers"><a href="#Channels-and-Buffers" class="headerlink" title="Channels and Buffers"></a>Channels and Buffers</h3><p>基本上，所有的 IO 在NIO 中都从一个Channel 开始。Channel 有点象流。 数据可以从Channel读到Buffer中，也可以从Buffer 写到Channel中。<br><img src="https://upload-images.jianshu.io/upload_images/15507353-260d5035da805295.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>常见的几种channel:</p>
+<ul>
+<li>FileChannel</li>
+<li>DatagramChannel  UDP连接</li>
+<li>SocketChannel 客户端socket连接</li>
+<li>ServerSocketChannel 服务端socket连接</li>
+</ul>
+<p>常见的几种Buffer:</p>
+<ul>
+<li>ByteBuffer</li>
+<li>CharBuffer</li>
+<li>DoubleBuffer</li>
+<li>FloatBuffer</li>
+<li>IntBuffer</li>
+<li>LongBuffer</li>
+<li>ShortBuffer</li>
+<li>Mappedyteuffer 表示内存映射文件 java nio 提供了这个在某种场景下极大提升效率</li>
+</ul>
+<h6 id="selector"><a href="#selector" class="headerlink" title="selector"></a>selector</h6><p>Selector允许单线程处理多个 Channel。如果你的应用打开了多个连接（通道），但每个连接的流量都很低，使用Selector就会很方便。例如，在一个聊天服务器中。<br><img src="https://upload-images.jianshu.io/upload_images/15507353-d28a4134e88df482.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<pre><code>A Thread uses a Selector to handle 3 Channel&apos;s </code></pre><h5 id="IO-VS-NIO"><a href="#IO-VS-NIO" class="headerlink" title="IO VS NIO"></a>IO VS NIO</h5><p><img src="https://upload-images.jianshu.io/upload_images/15507353-ce1f5858d4ae790b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h3 id="netty原理"><a href="#netty原理" class="headerlink" title="netty原理"></a>netty原理</h3><p>Netty是一个事件驱动、异步IO的网络框架。高性能，吞吐量更高，延迟更低、高性能之处主要来自于其I/O 模型和线程处理模型(Reactor)，前者决定如何收发数据，后者决定如何处理数据。<br><img src="https://upload-images.jianshu.io/upload_images/15507353-55e3375574c52e80.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h6 id="Reactor模式"><a href="#Reactor模式" class="headerlink" title="Reactor模式"></a>Reactor模式</h6><p><img src="https://upload-images.jianshu.io/upload_images/15507353-443bc0e11a9eba93.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>Reactor模式(反应器模式)是一种处理一个或多个客户端并发交付服务请求的事件设计模式。当请求抵达后，服务处理程序使用I/O多路复用策略，然后同步地派发这些请求至相关的请求处理程序。</p>
+<p><strong><em>核心组件交互图如下：</em></strong><br><img src="https://upload-images.jianshu.io/upload_images/15507353-e7685f3c6ba9bcbd.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<ul>
+<li><strong><em>Handle(句柄或描述符，在Windows下称为句柄，在Linux下称为描述符)：</em></strong>本质上表示一种资源(比如说文件描述符，或是针对网络编程中的socket描述符)，是由操作系统提供的；该资源用于表示一个个的事件，事件既可以来自于外部，也可以来自于内部。</li>
+<li><strong><em>Synchronous Event Demultiplexer(同步事件分离器)：</em></strong>它本身是一个系统调用，用于等待事件的发生(事件可能是一个，也可能是多个)。调用方在调用它的时候会被阻塞，一直阻塞到同步事件分离器上有事件产生为止。对于Linux来说，同步事件分离器指的就是常用的I/O多路复用机制，比如说select、poll、epoll等。在Java NIO领域中，同步事件分离器对应的组件就是Selector；对应的阻塞方法就是select方法。</li>
+<li><strong><em>Event Handler(事件处理器)：</em></strong>本身由多个回调方法构成，这些回调方法构成了与应用相关的对于某个事件的反馈机制。在Java NIO领域中并没有提供事件处理器机制让我们调用或去进行回调，是由我们自己编写代码完成的。Netty相比于Java NIO来说，在事件处理器这个角色上进行了一个升级，它为我们开发者提供了大量的回调方法，供我们在特定事件产生时实现相应的回调方法进行业务逻辑的处理，即ChannelHandler。ChannelHandler中的方法对应的都是一个个事件的回调。</li>
+<li><strong><em>Initiation Dispatcher(初始分发器):</em></strong>际上就是Reactor角色。它本身定义了一些规范，这些规范用于控制事件的调度方式，同时又提供了应用进行事件处理器的注册、删除等设施。它本身是整个事件处理器的核心所在，Initiation Dispatcher会通过Synchronous Event Demultiplexer来等待事件的发生。一旦事件发生，Initiation Dispatcher首先会分离出每一个事件，然后调用事件处理器，最后调用相关的回调方法来处理这些事件。Netty中ChannelHandler里的一个个回调方法都是由bossGroup或workGroup中的某个EventLoop来调用的。</li>
+</ul>
+<h5 id="Basic-Reactor-Design"><a href="#Basic-Reactor-Design" class="headerlink" title="Basic Reactor Design"></a>Basic Reactor Design</h5><p><img src="https://upload-images.jianshu.io/upload_images/15507353-5df6e05a83dc5945.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h6 id="NIO实现Reactor"><a href="#NIO实现Reactor" class="headerlink" title="NIO实现Reactor"></a>NIO实现Reactor</h6><p><img src="https://upload-images.jianshu.io/upload_images/15507353-db75d724aa5f6db9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br><img src="https://upload-images.jianshu.io/upload_images/15507353-5bb1f9485cb1a07b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/15507353-a53c90380c390c61.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br><img src="https://upload-images.jianshu.io/upload_images/15507353-07ddccf1a37c26a5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br><img src="https://upload-images.jianshu.io/upload_images/15507353-e2cb5f543d7d9ae7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>上面是用java nio实现基本Reactor模式，需要自己写很多代码。</p>
+<h6 id="Worker-Thread-Poll-版-Reactor模式"><a href="#Worker-Thread-Poll-版-Reactor模式" class="headerlink" title="Worker Thread Poll 版 Reactor模式"></a>Worker Thread Poll 版 Reactor模式</h6><p><img src="https://upload-images.jianshu.io/upload_images/15507353-3c376476b20d784f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h6 id="多Reactor模式"><a href="#多Reactor模式" class="headerlink" title="多Reactor模式"></a>多Reactor模式</h6><p><img src="https://upload-images.jianshu.io/upload_images/15507353-86328d64eb66fe59.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p><strong><em>netty就是使用的就是多Reactor模式：</em></strong><br><img src="https://upload-images.jianshu.io/upload_images/15507353-f4ab71b11b50b707.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h6 id="Netty的异步处理："><a href="#Netty的异步处理：" class="headerlink" title="Netty的异步处理："></a>Netty的异步处理：</h6><p><img src="https://upload-images.jianshu.io/upload_images/15507353-ef58694de510130b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br><strong><em>常见操作：</em></strong><br><img src="https://upload-images.jianshu.io/upload_images/15507353-ba866ab661f4a1b3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h5 id="netty功能特性"><a href="#netty功能特性" class="headerlink" title="netty功能特性"></a>netty功能特性</h5><p><img src="https://upload-images.jianshu.io/upload_images/15507353-1ce0568318af538e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h5 id="Netty核心组件"><a href="#Netty核心组件" class="headerlink" title="Netty核心组件"></a>Netty核心组件</h5><p><img src="https://upload-images.jianshu.io/upload_images/15507353-0fbe146884fe1a30.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h5 id="ChannelPipeline处理入站事件和出站操作"><a href="#ChannelPipeline处理入站事件和出站操作" class="headerlink" title="ChannelPipeline处理入站事件和出站操作"></a>ChannelPipeline处理入站事件和出站操作</h5><p><img src="https://upload-images.jianshu.io/upload_images/15507353-73f9d820cd920b58.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br><img src="https://upload-images.jianshu.io/upload_images/15507353-8e50fc6be26fbef5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br><img src="https://upload-images.jianshu.io/upload_images/15507353-607d208786174743.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h5 id="Netty-Reactor-工作架构图"><a href="#Netty-Reactor-工作架构图" class="headerlink" title="Netty Reactor 工作架构图"></a>Netty Reactor 工作架构图</h5><p><img src="https://upload-images.jianshu.io/upload_images/15507353-3a5b02adeaa394ff.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br><img src="https://upload-images.jianshu.io/upload_images/15507353-814edca973a0e5e2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br><img src="https://upload-images.jianshu.io/upload_images/15507353-c0899726b4bf7b4f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>下面有一个基于netty的简单的IM demo,可以简单了解netty的编程方法和思想：<br>Server:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line">package com.yuanjia.im.netty.server;</span><br><span class="line"></span><br><span class="line">import io.netty.bootstrap.ServerBootstrap;</span><br><span class="line">import io.netty.channel.ChannelFuture;</span><br><span class="line">import io.netty.channel.ChannelInitializer;</span><br><span class="line">import io.netty.channel.ChannelOption;</span><br><span class="line">import io.netty.channel.EventLoopGroup;</span><br><span class="line">import io.netty.channel.nio.NioEventLoopGroup;</span><br><span class="line">import io.netty.channel.socket.SocketChannel;</span><br><span class="line">import io.netty.channel.socket.nio.NioServerSocketChannel;</span><br><span class="line">import io.netty.handler.codec.string.StringDecoder;</span><br><span class="line">import io.netty.handler.codec.string.StringEncoder;</span><br><span class="line"></span><br><span class="line">import java.net.InetSocketAddress;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Created by bruce on 2019/6/10.</span><br><span class="line"> */</span><br><span class="line">public class Server &#123;</span><br><span class="line">    private int port;</span><br><span class="line"></span><br><span class="line">    public Server(int port) &#123;</span><br><span class="line">        this.port = port;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void start() &#123;</span><br><span class="line"></span><br><span class="line">        // netty服务端ServerBootstrap启动的时候,默认有两个eventloop分别是bossGroup和 workGroup</span><br><span class="line"></span><br><span class="line">        EventLoopGroup boosGroup = new NioEventLoopGroup(1);   // bossGroup</span><br><span class="line">        EventLoopGroup workerGroup = new NioEventLoopGroup();  // workGroup</span><br><span class="line">        try &#123;</span><br><span class="line">            ServerBootstrap sbs = new ServerBootstrap().group(boosGroup, workerGroup)</span><br><span class="line">                    .channel(NioServerSocketChannel.class)</span><br><span class="line">                    .localAddress(new InetSocketAddress(port))</span><br><span class="line">                    .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() &#123;</span><br><span class="line">                        protected void initChannel(SocketChannel ch) throws Exception &#123;</span><br><span class="line">                            ch.pipeline().addLast(&quot;decoder&quot;, new StringDecoder());</span><br><span class="line">                            ch.pipeline().addLast(&quot;encoder&quot;, new StringEncoder());</span><br><span class="line">                            //ch.pipeline().addLast(new DiscardInboundHandler());</span><br><span class="line">                            ch.pipeline().addLast(new ServerHandler());</span><br><span class="line">                        &#125;;</span><br><span class="line">                    &#125;).option(ChannelOption.SO_BACKLOG, 128)</span><br><span class="line">                    .childOption(ChannelOption.SO_KEEPALIVE, true);</span><br><span class="line"></span><br><span class="line">            ChannelFuture future = sbs.bind(port).sync();</span><br><span class="line">            System.out.println(&quot;Server start listen at &quot; + port);</span><br><span class="line">            future.channel().closeFuture().sync();</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            boosGroup.shutdownGracefully();</span><br><span class="line">            workerGroup.shutdownGracefully();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        int port;</span><br><span class="line">        if (args.length &gt; 0) &#123;</span><br><span class="line">            port = Integer.parseInt(args[0]);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            port = 8090;</span><br><span class="line">        &#125;</span><br><span class="line">        new Server(port).start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Client:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line">package com.yuanjia.im.netty.client;</span><br><span class="line"></span><br><span class="line">import io.netty.bootstrap.Bootstrap;</span><br><span class="line">import io.netty.channel.*;</span><br><span class="line">import io.netty.channel.nio.NioEventLoopGroup;</span><br><span class="line">import io.netty.channel.socket.SocketChannel;</span><br><span class="line">import io.netty.channel.socket.nio.NioSocketChannel;</span><br><span class="line">import io.netty.handler.codec.string.StringDecoder;</span><br><span class="line">import io.netty.handler.codec.string.StringEncoder;</span><br><span class="line"></span><br><span class="line">import java.util.Scanner;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Created by bruce on 2019/6/10.</span><br><span class="line"> */</span><br><span class="line">public class Client &#123;</span><br><span class="line"></span><br><span class="line">    //server &apos;s ip 这里需要用户根据自己server的ip来做修改,例如我这里是10.1.132.194</span><br><span class="line">    private static final String HOST = System.getProperty(&quot;host&quot;, &quot;10.1.132.194&quot;);</span><br><span class="line">    //port 8090</span><br><span class="line">    private static final int PORT = Integer.parseInt(System.getProperty(&quot;port&quot;, &quot;8090&quot;));</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        EventLoopGroup group = new NioEventLoopGroup();</span><br><span class="line">        try &#123;</span><br><span class="line">            Bootstrap b = new Bootstrap();</span><br><span class="line">            b.group(group)</span><br><span class="line">                    .channel(NioSocketChannel.class)</span><br><span class="line">                    .option(ChannelOption.TCP_NODELAY, true)</span><br><span class="line">                    .handler(new ChannelInitializer&lt;SocketChannel&gt;()&#123;</span><br><span class="line">                        @Override</span><br><span class="line">                        public void initChannel(SocketChannel ch) throws Exception &#123;</span><br><span class="line">                            ChannelPipeline p = ch.pipeline();</span><br><span class="line">                            p.addLast(&quot;decoder&quot;, new StringDecoder());</span><br><span class="line">                            p.addLast(&quot;encoder&quot;, new StringEncoder());</span><br><span class="line">                            p.addLast(new ClientHandler());</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;);</span><br><span class="line">            ChannelFuture future = b.connect(HOST, PORT).sync();</span><br><span class="line">            //控制台输入消息给服务端让服务端转给给另外一个客户端</span><br><span class="line">            //消息如:  认识你真高兴我的小伙伴@10.1.8.30</span><br><span class="line">            //消息就转发给了10.1.8.30</span><br><span class="line">            Scanner sc = new Scanner(System.in);</span><br><span class="line">            while(sc.hasNext())&#123;</span><br><span class="line">                String message = sc.nextLine();</span><br><span class="line">                future.channel().writeAndFlush(message);</span><br><span class="line">            &#125;</span><br><span class="line">            future.channel().closeFuture().sync();</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            group.spliterator();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ServerHandler:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line">package com.yuanjia.im.netty.server;</span><br><span class="line"></span><br><span class="line">import io.netty.channel.ChannelHandler;</span><br><span class="line">import io.netty.channel.ChannelHandlerContext;</span><br><span class="line">import io.netty.channel.ChannelInboundHandler;</span><br><span class="line">import io.netty.channel.socket.SocketChannel;</span><br><span class="line">import io.netty.util.internal.PlatformDependent;</span><br><span class="line"></span><br><span class="line">import java.util.concurrent.ConcurrentMap;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Created by bruce on 2019/6/10.</span><br><span class="line"> */</span><br><span class="line">@ChannelHandler.Sharable</span><br><span class="line">public class ServerHandler implements ChannelInboundHandler &#123;</span><br><span class="line"></span><br><span class="line">    //存放客户端和服务端之间的连接</span><br><span class="line">    private static ConcurrentMap&lt;String,ChannelHandlerContext&gt; channelConcurrentMap = PlatformDependent.newConcurrentHashMap();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void channelRegistered(ChannelHandlerContext channelHandlerContext) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void channelUnregistered(ChannelHandlerContext channelHandlerContext) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void channelActive(ChannelHandlerContext channelHandlerContext) throws Exception &#123;</span><br><span class="line">        //获取客户端的ip</span><br><span class="line">        String hostString = ((SocketChannel)channelHandlerContext.channel()).remoteAddress().getHostString();</span><br><span class="line">        System.out.println(hostString + &quot; online&quot;);</span><br><span class="line">        //将客户端和服务端之间的连接存放在concurrentHashMap中</span><br><span class="line">        channelConcurrentMap.put(hostString,channelHandlerContext);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void channelInactive(ChannelHandlerContext channelHandlerContext) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void channelRead(ChannelHandlerContext channelHandlerContext, Object o) throws Exception &#123;</span><br><span class="line">        System.out.println(&quot;ServerHandler channelRead....&quot;);</span><br><span class="line">        //客户端通过Terminal连接后的输入格式为  message@ip ,这个消息接收者ip会收到message消息</span><br><span class="line">        //例如:   你最近还好吗,Bruce@10.1.128.1</span><br><span class="line">        String messageString = o.toString();</span><br><span class="line">        String[] messages = messageString.split(&quot;@&quot;);</span><br><span class="line">        String message = messages[0];</span><br><span class="line">        String targetHost = messages[1];</span><br><span class="line">        System.out.println(channelHandlerContext.channel().remoteAddress()+&quot;-&gt;Server :&quot;+o.toString());</span><br><span class="line">        ChannelHandlerContext targetChannelHandlerContext = channelConcurrentMap.get(targetHost);</span><br><span class="line">        targetChannelHandlerContext.write(channelHandlerContext.channel().remoteAddress() + &quot; say : &quot; + message);</span><br><span class="line">        targetChannelHandlerContext.flush();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void channelReadComplete(ChannelHandlerContext channelHandlerContext) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void userEventTriggered(ChannelHandlerContext channelHandlerContext, Object o) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void channelWritabilityChanged(ChannelHandlerContext channelHandlerContext) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void handlerAdded(ChannelHandlerContext channelHandlerContext) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void handlerRemoved(ChannelHandlerContext channelHandlerContext) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void exceptionCaught(ChannelHandlerContext channelHandlerContext, Throwable throwable) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ClientHandler</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">package com.yuanjia.im.netty.client;</span><br><span class="line"></span><br><span class="line">import io.netty.channel.ChannelHandlerContext;</span><br><span class="line">import io.netty.channel.ChannelInboundHandlerAdapter;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Created by bruce on 2019/6/10.</span><br><span class="line"> */</span><br><span class="line">public class ClientHandler extends ChannelInboundHandlerAdapter &#123;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void channelActive(ChannelHandlerContext ctx) throws Exception &#123;</span><br><span class="line">        System.out.println(&quot;Client01Handler Active&quot;);</span><br><span class="line">        //ctx.fireChannelActive();  // 若把这一句注释掉将无法将event传递给下一个ClientHandler</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception &#123;</span><br><span class="line">        System.out.println(msg);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception &#123;</span><br><span class="line">        cause.printStackTrace();</span><br><span class="line">        ctx.close();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>代码地址：<a href="https://github.com/bruceChi/nettyIM" target="_blank" rel="noopener">https://github.com/bruceChi/nettyIM</a><br>参考资料：<br>1、<a href="http://tutorials.jenkov.com/java-nio" target="_blank" rel="noopener">http://tutorials.jenkov.com/java-nio</a><br>2、 UNIX Network Programming<br>3、 <a href="https://www.jianshu.com/p/63a006e5e22d" target="_blank" rel="noopener">https://www.jianshu.com/p/63a006e5e22d</a><br>4、<a href="http://tutorials.jenkov.com/netty" target="_blank" rel="noopener">http://tutorials.jenkov.com/netty</a><br>5、<a href="http://www.dre.vanderbilt.edu/~schmidt/PDF/reactor-siemens.pdf" target="_blank" rel="noopener">http://www.dre.vanderbilt.edu/~schmidt/PDF/reactor-siemens.pdf</a><br>6、 <a href="https://www.cnblogs.com/winner-0715/p/8733787.html" target="_blank" rel="noopener">https://www.cnblogs.com/winner-0715/p/8733787.html</a><br>7、 <a href="http://gee.cs.oswego.edu/dl/cpjslides/nio.pdf" target="_blank" rel="noopener">http://gee.cs.oswego.edu/dl/cpjslides/nio.pdf</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/08/03/浅谈netty/" data-id="cjyvdri8t0000qos6jowiz0lu" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2019/08/03/浅谈dubbo微服务/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">浅谈dubbo微服务</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2019/08/03/浅谈netty/">浅谈netty</a>
+          </li>
+        
+          <li>
+            <a href="/2019/08/03/浅谈dubbo微服务/">浅谈dubbo微服务</a>
+          </li>
+        
+          <li>
+            <a href="/2019/07/26/深入理解volatile/">深入理解volatile</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2019 池元嘉<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+
+
+  </div>
+</body>
+</html>
