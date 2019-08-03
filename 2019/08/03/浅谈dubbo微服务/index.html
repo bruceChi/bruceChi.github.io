@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="utf-8">
+  
+
+  
+  <title>浅谈dubbo微服务 | 梦想成为一个码农</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="实现一个简单的RPC系统 provider: 12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849package com.yuanjia.demo.rpc;import java.io.ObjectInputStream;import java.io.ObjectOutpu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="浅谈dubbo微服务">
+<meta property="og:url" content="http://yoursite.com/2019/08/03/浅谈dubbo微服务/index.html">
+<meta property="og:site_name" content="梦想成为一个码农">
+<meta property="og:description" content="实现一个简单的RPC系统 provider: 12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849package com.yuanjia.demo.rpc;import java.io.ObjectInputStream;import java.io.ObjectOutpu">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-8284522c66270638.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-d2ca2831efcc14b7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-967cca3e97f0f800.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-b055268eec21a80d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-c8b22e2d9ef502ef.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-554acf83e6ca02f3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-abb9741897ac4c44.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-f03d19155de231a6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-5cc714e867d0939b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-0b007ca9dbfbba08.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-458f410c43c0bfb3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-b230b96fa5477a38.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-e206f75c790c8fba.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-88b5d37afb703eb1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-5bfdb5b4bad5334d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-916318aadea8c3ae.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/15507353-1b3df1f850cad941.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2019-08-03T03:15:30.229Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="浅谈dubbo微服务">
+<meta name="twitter:description" content="实现一个简单的RPC系统 provider: 12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849package com.yuanjia.demo.rpc;import java.io.ObjectInputStream;import java.io.ObjectOutpu">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/15507353-8284522c66270638.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+  
+    <link rel="alternate" href="/atom.xml" title="梦想成为一个码农" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+</html>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">梦想成为一个码农</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-浅谈dubbo微服务" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/08/03/浅谈dubbo微服务/" class="article-date">
+  <time datetime="2019-08-03T03:14:19.613Z" itemprop="datePublished">2019-08-03</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      浅谈dubbo微服务
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="实现一个简单的RPC系统"><a href="#实现一个简单的RPC系统" class="headerlink" title="实现一个简单的RPC系统"></a>实现一个简单的RPC系统</h1><p><img src="https://upload-images.jianshu.io/upload_images/15507353-8284522c66270638.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>provider:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">package com.yuanjia.demo.rpc;</span><br><span class="line"></span><br><span class="line">import java.io.ObjectInputStream;</span><br><span class="line">import java.io.ObjectOutputStream;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line">import java.net.ServerSocket;</span><br><span class="line">import java.net.Socket;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Created by chiyuanjia on 2018/4/16.</span><br><span class="line"> */</span><br><span class="line">public class Provider &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        //新建一个server socket 端口号为1234，普通的RPC调用可以通过socket来实现 </span><br><span class="line">        ServerSocket server=new ServerSocket(1234);</span><br><span class="line">        //监听socket连接并响应</span><br><span class="line">        while(true)</span><br><span class="line">        &#123;</span><br><span class="line">            Socket socket=server.accept();</span><br><span class="line">            ObjectInputStream input=new ObjectInputStream(socket.getInputStream());</span><br><span class="line"></span><br><span class="line">            //获得服务端要调用的类名</span><br><span class="line">            String classname=input.readUTF();</span><br><span class="line">            //获得服务端要调用的方法名称</span><br><span class="line">            String methodName=input.readUTF();</span><br><span class="line">            //获得服务端要调用方法的参数类型</span><br><span class="line">            Class&lt;?&gt;[] parameterTypes=(Class&lt;?&gt;[]) input.readObject();</span><br><span class="line">            //获得服务端要调用方法的每一个参数的值</span><br><span class="line">            Object[] arguments=(Object[]) input.readObject();</span><br><span class="line"></span><br><span class="line">            //创建类</span><br><span class="line">            Class serviceClass=Class.forName(classname);</span><br><span class="line">            //创建对象</span><br><span class="line">            Object object = serviceClass.newInstance();</span><br><span class="line">            //获得该类的对应的方法</span><br><span class="line">            Method method=serviceClass.getMethod(methodName, parameterTypes);</span><br><span class="line"></span><br><span class="line">            //该对象调用指定方法</span><br><span class="line">            Object result=method.invoke(object, arguments);</span><br><span class="line"></span><br><span class="line">            ObjectOutputStream output=new ObjectOutputStream(socket.getOutputStream());</span><br><span class="line">            output.writeObject(result);</span><br><span class="line">            socket.close();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>consumer:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">package com.yuanjia.demo.rpc;</span><br><span class="line"></span><br><span class="line">import java.io.ObjectInputStream;</span><br><span class="line">import java.io.ObjectOutputStream;</span><br><span class="line">import java.net.InetAddress;</span><br><span class="line">import java.net.Socket;</span><br><span class="line">/**</span><br><span class="line"> * Created by duheng on 2018/4/16.</span><br><span class="line"> */</span><br><span class="line">public class Consumer &#123;</span><br><span class="line"></span><br><span class="line">    public void doBusiness() throws Exception&#123;</span><br><span class="line">        //设置调用类的路径和要调用的方法</span><br><span class="line">        String classname=&quot;com.dfire.demo.rpc.RPCServiceImpl&quot;;</span><br><span class="line">        String method=&quot;sayHello&quot;;</span><br><span class="line">        Class[] argumentsType=&#123;String.class&#125;;</span><br><span class="line"></span><br><span class="line">        //获取本机计算机名称</span><br><span class="line">        InetAddress inetAddress = InetAddress.getLocalHost();</span><br><span class="line">        String hostName = inetAddress.getHostName().toString();</span><br><span class="line"></span><br><span class="line">        Object[] arguments=&#123;hostName&#125;;</span><br><span class="line"></span><br><span class="line">        //与10.1.134.145主机建立socket连接进行通讯</span><br><span class="line">        Socket socket = new Socket(&quot;127.0.0.1&quot;,1234);</span><br><span class="line"></span><br><span class="line">        ObjectOutputStream output=new ObjectOutputStream(socket.getOutputStream());</span><br><span class="line"></span><br><span class="line">        //输入数据</span><br><span class="line">        output.writeUTF(classname);</span><br><span class="line">        output.writeUTF(method);</span><br><span class="line">        output.writeObject(argumentsType);</span><br><span class="line">        output.writeObject(arguments);</span><br><span class="line"></span><br><span class="line">        //得到返回数据</span><br><span class="line">        ObjectInputStream input=new ObjectInputStream(socket.getInputStream());</span><br><span class="line">        Object result=input.readObject();</span><br><span class="line">        System.out.println(Thread.currentThread().getName()+&quot; &quot;+result);</span><br><span class="line">        socket.close();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            new Consumer().doBusiness();</span><br><span class="line">        &#125;catch (Exception e)&#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>输入命令查看：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lsof -i tcp:1234</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://upload-images.jianshu.io/upload_images/15507353-d2ca2831efcc14b7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>上图显示线程16419在监听TCP的通讯，做为RPC的server端<br>下面我们看下我们的dubbo的通讯监听情况：<br>先看服务提供者：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lsof -i tcp:20881</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://upload-images.jianshu.io/upload_images/15507353-967cca3e97f0f800.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>下面为服务消费者：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lsof -i tcp:20880</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://upload-images.jianshu.io/upload_images/15507353-b055268eec21a80d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>最后边的许多连接表示10.1.134.145连接了多个机器的服务【服务提供者端口为20880】</p>
+<p>上面通过两个简单的类Provider和Consumer实现了一个简单的RPC系统，大家应该就能清楚认识到RPC的整个架构和通讯是比较简单的，当然上面的这个RPC系统有很多缺点：</p>
+<ul>
+<li>BIO，不能支持高并发。</li>
+<li>不支持负载均衡</li>
+<li>不支持容错机制</li>
+<li>不支持SPI扩展</li>
+<li>不支持各种序列化</li>
+<li>不支持自动注册和发现<br>当然还有其他很多缺点，业界有很多RPC的框架，例如：dubbo，我们下面来讲一下讲。</li>
+</ul>
+<p>下面是从dubbo官网copy下面的一段话，对dubbo的简单描述：<br><img src="https://upload-images.jianshu.io/upload_images/15507353-c8b22e2d9ef502ef.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br><img src="https://upload-images.jianshu.io/upload_images/15507353-554acf83e6ca02f3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h2 id="dubbo的拓扑图"><a href="#dubbo的拓扑图" class="headerlink" title="dubbo的拓扑图"></a>dubbo的拓扑图</h2><p><img src="https://upload-images.jianshu.io/upload_images/15507353-abb9741897ac4c44.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/15507353-f03d19155de231a6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>我们上面自己实现的RPC系统就缺少Registry和Monitor这两个模块，当然其他模块也很弱</p>
+<h2 id="整体设计"><a href="#整体设计" class="headerlink" title="整体设计"></a>整体设计</h2><p><img src="https://upload-images.jianshu.io/upload_images/15507353-5cc714e867d0939b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<ul>
+<li><p>config 配置层：对外配置接口，以 ServiceConfig, ReferenceConfig 为中心，可以直接初始化配置类，也可以通过 spring 解析配置生成配置类</p>
+</li>
+<li><p>proxy 服务代理层：服务接口透明代理，生成服务的客户端 Stub 和服务器端 Skeleton, 以 ServiceProxy 为中心，扩展接口为 ProxyFactory</p>
+</li>
+<li><p>registry 注册中心层：封装服务地址的注册与发现，以服务 URL 为中心，扩展接口为 RegistryFactory, Registry, RegistryService</p>
+</li>
+<li><p>cluster 路由层：封装多个提供者的路由及负载均衡，并桥接注册中心，以 Invoker 为中心，扩展接口 为 Cluster, Directory, Router, LoadBalance</p>
+</li>
+<li><p>monitor 监控层：RPC 调用次数和调用时间监控，以 Statistics 为中心，扩展接口为 MonitorFactory, Monitor, MonitorServiceprotocol 远程调用层：封装 RPC 调用，以 Invocation, Result 为中心，扩展接口为 Protocol, Invoker, Exporter</p>
+</li>
+<li><p>exchange 信息交换层：封装请求响应模式，同步转异步，以 Request, Response 为中心，扩展接口为Exchanger, ExchangeChannel, ExchangeClient, ExchangeServer</p>
+</li>
+<li><p>transport 网络传输层：抽象 mina 和 netty 为统一接口，以 Message 为中心，扩展接口为 Channel, Transporter, Client, Server, Codecserialize 数据序列化层：可复用的一些工具，扩展接口为 Serialization, ObjectInput, ObjectOutput, ThreadPool    </p>
+<h2 id="调用链："><a href="#调用链：" class="headerlink" title="调用链："></a>调用链：</h2><p><img src="https://upload-images.jianshu.io/upload_images/15507353-0b007ca9dbfbba08.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>##服务提供者暴露一个服务的过程：<br><img src="https://upload-images.jianshu.io/upload_images/15507353-458f410c43c0bfb3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h2 id="暴露服务时序图"><a href="#暴露服务时序图" class="headerlink" title="暴露服务时序图"></a>暴露服务时序图</h2><p><img src="https://upload-images.jianshu.io/upload_images/15507353-b230b96fa5477a38.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>##服务消费者消费一个服务的过程<br><img src="https://upload-images.jianshu.io/upload_images/15507353-e206f75c790c8fba.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>##引用服务时序<br><img src="https://upload-images.jianshu.io/upload_images/15507353-88b5d37afb703eb1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h2 id="服务提供-Invoker-和服务消费-Invoker"><a href="#服务提供-Invoker-和服务消费-Invoker" class="headerlink" title="服务提供 Invoker 和服务消费 Invoker"></a>服务提供 Invoker 和服务消费 Invoker</h2><p><img src="https://upload-images.jianshu.io/upload_images/15507353-5bfdb5b4bad5334d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h2 id="核心领域模型-Microkernel-Plugin-模式"><a href="#核心领域模型-Microkernel-Plugin-模式" class="headerlink" title="核心领域模型(Microkernel + Plugin 模式)"></a>核心领域模型(Microkernel + Plugin 模式)</h2></li>
+<li><p>Protocol 是服务域，它是 Invoker 暴露和引用的主功能入口，它负责 Invoker 的生命周期管理。</p>
+</li>
+<li><p>functionalities是实体域，它是 Dubbo 的核心模型，其它模型都向它靠扰，或转换成它，它代表一个可</p>
+<pre><code>执行体，可向它发起 invoke 调用，它有可能是一个本地的实现，也可能是一个远程的实现，也可
+能一个集群实现。</code></pre></li>
+<li><p>Invocation 是会话域，它持有调用过程中的变量，比如方法名，参数等。</p>
+<h2 id="dubbo：-数据传输"><a href="#dubbo：-数据传输" class="headerlink" title="dubbo：// 数据传输"></a>dubbo：// 数据传输</h2><p>Dubbo 缺省协议采用单一长连接和 NIO 异步通讯，适合于小数据量大并发的服务调用，以及服务消费者机器数远大于服务提供者机器数的情况。反之，Dubbo 缺省协议不适合传送大数据量的服务，比如传文件，传视频等，除非请求量很低。<br><img src="https://upload-images.jianshu.io/upload_images/15507353-916318aadea8c3ae.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<pre><code>+ Transporter:     mina, netty, grizzy
++ Serialization:    dubbo, hessian2, java, json
++ Dispatcher: all, direct, message, execution, connection
++ ThreadPool: fixed, cached, limited</code></pre><h3 id="Dispatcher"><a href="#Dispatcher" class="headerlink" title="Dispatcher"></a>Dispatcher</h3><p>对于Dubbo集群中的Provider角色，有IO线程池和业务处理线程池（默认200）两个线程池，所以当业务的并发比较高，或者某些业务处理变慢，业务线程池就很容易被“打满”，抛出“RejectedExecutionException: Thread pool is EXHAUSTED! ”异常。</p>
+</li>
+</ul>
+<ol>
+<li>all 所有消息都派发到线程池，包括请求，响应，连接事件，断开事件，心跳等。 </li>
+<li>direct 所有消息都不派发到线程池，全部在 IO 线程上直接执行。</li>
+<li>message 只有请求响应消息派发到线程池，其它连接断开事件，心跳等消息，直接在IO线程上执行。</li>
+<li>execution 只请求消息派发到线程池，不含响应，响应和其它连接断开事件，心跳等消息，直接在 IO 线程上执行。</li>
+<li>connection 在 IO 线程上，将连接断开事件放入队列，有序逐个执行，其它消息派发到线程池。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;dubbo:provider version=&quot;1.0&quot; delay=&quot;-5000&quot; timeout=&quot;5000&quot; dispatcher=&quot;all&quot; threads=&quot;400&quot; loadbalance=&quot;leastactive&quot; actives=&quot;400&quot; /&gt;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<h3 id="ThreadPool"><a href="#ThreadPool" class="headerlink" title="ThreadPool"></a>ThreadPool</h3><ol>
+<li><p>fixed 固定大小线程池，启动时建立线程，不关闭，一直持有。(缺省)。</p>
+</li>
+<li><p>cached 缓存线程池，空闲一分钟自动删除，需要时重建。</p>
+</li>
+<li><p>limited 可伸缩线程池，但池中的线程数只会增长不会收缩。只增长不收缩的目的是为了避免收缩时突然来了大流量引起的性能问题。</p>
+</li>
+<li><p>eager 优先创建Worker线程池。在任务数量大于corePoolSize但是小于maximumPoolSize时,优先创建Worker来处理任务。当任务数量大于maximumPoolSize时，将任务放入阻塞队列中。阻塞队列充满时抛出RejectedExecutionException。(相比于cached:cached在任务数量超<br>过maximumPoolSize时直接抛出异常而不是将任务放入阻塞队列)。</p>
+</li>
+</ol>
+<h2 id="zookeeper-注册中心"><a href="#zookeeper-注册中心" class="headerlink" title="zookeeper 注册中心"></a>zookeeper 注册中心</h2><p>Zookeeper 是 Apacahe Hadoop 的子项目，是一个树型的目录服务，支持变更推送，适合作为 Dubbo 服务的注册中心，工业强度较高，可用于生产环境，并推荐使用。<br><img src="https://upload-images.jianshu.io/upload_images/15507353-1b3df1f850cad941.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h6 id="流程说明："><a href="#流程说明：" class="headerlink" title="流程说明："></a>流程说明：</h6><ol>
+<li>服务提供者启动时: 向 /dubbo/com.foo.BarService/providers 目录下写入自己的 URL 地址。</li>
+<li>服务消费者启动时: 订阅 /dubbo/com.foo.BarService/providers 目录下的提供者 URL 地址。并向 /dubbo/com.foo.BarService/consumers 目录下写入自己的 URL 地址。</li>
+<li>监控中心启动时: 订阅 /dubbo/com.foo.BarService 目录下的所有提供者和消费者 URL 地址。<h2 id="Fault-Tolerance-容错"><a href="#Fault-Tolerance-容错" class="headerlink" title="Fault Tolerance 容错"></a>Fault Tolerance 容错</h2></li>
+<li>Failover – FailoverClusterInvoker<pre><code>失败自动切换，尝试其他服务器。 (默认的方案)</code></pre></li>
+<li>Failfast – FailfastClusterInvoker<pre><code>失败立即抛出异常,。通常用于非幂等性的写操作，比如新增记录。</code></pre></li>
+<li>Failsafe – FailsafeClusterInvoker<pre><code>失败忽略异常。通常用于写入审计日志等操作。</code></pre></li>
+<li>Failback – FailbackClusterInvoker<pre><code>失败自动恢复，记录日志并定时重试。 通常用于消息通知操作。</code></pre></li>
+<li>Forking – ForkingClusterInvoker<pre><code>并行调用多个服务，一个成功立即返回。通常用于实时性要求较高的读操作，但需要浪费更多服务资源。可通过 forks=“2” 来设置最大并行数。</code></pre></li>
+<li>Broadcast – BroadcastClusterInvoker<pre><code>广播调用所有提供者，任意一个报错则报错</code></pre></li>
+</ol>
+<h2 id="Load-Balancing-负载均衡"><a href="#Load-Balancing-负载均衡" class="headerlink" title="Load Balancing 负载均衡"></a>Load Balancing 负载均衡</h2><ol>
+<li><p>random (随机，按权重设置随机概率)  默认的策略</p>
+<ol start="2">
+<li><p>round-robin (轮循，按公约后的权重设置轮循比率)<br> 存在慢的提供者累积请求问题，比如：第二台机器很慢，但没挂，<br> 当请求调到第二台时就卡在那，久而久之，所有请求都卡在调到第二台上。 </p>
+</li>
+<li><p>least-active (最少活跃调用数，相同活跃数的随机，活跃数指调用前后计数差。) 使慢的提供者收到更少请求，因为越慢的提供者的调用前后计数差会越大，不支持权重。 【线上用得比较多，注意dubbo低版本有bug】</p>
+</li>
+<li><p>consistent-hash(一致性Hash，相同参数的请求总是发到同一提供者)<br>当某一台提供者挂时，原本发往该提供者的请求，基于虚拟节点，平摊到其它提供者，不会引起剧烈变动，会导致压力分摊不均。</p>
+</li>
+<li><p>支持扩展 </p>
+<pre><code>需要实现AbstractLoadBalance接口</code></pre></li>
+</ol>
+</li>
+</ol>
+<h2 id="SPI扩展实现"><a href="#SPI扩展实现" class="headerlink" title="SPI扩展实现"></a>SPI扩展实现</h2><p>一、调用拦截扩展<br>扩展说明：服务提供方和服务消费方调用过程拦截，Dubbo 本身的大多功能均基于此扩展点实现，每次远程方法执行，该拦截都会被执行，请注意对性能的影响。dubbo层的限流和熔断可以用这个filter扩展来实现。</p>
+<p>约定：</p>
+<ul>
+<li>用户自定义 filter 默认在内置 filter 之后。</li>
+<li>特殊值 default，表示缺省扩展点插入的位置。比如：filter=“xxx,default,yyy”，表示 xxx 在缺省 filter 之前，yyy 在缺省 filter 之后。</li>
+<li>特殊符号 -，表示剔除。比如：filter=“-foo1”，剔除添加缺省扩展点 foo1。比如：filter=“-default”，剔除添加所有缺省扩展点。</li>
+<li>provider 和 service 同时配置的 filter 时，累加所有 filter，而不是覆盖。比如：&lt;dubbo:provider filter=”xxx,yyy”/&gt; 和 &lt;dubbo:service filter=”aaa,bbb” /&gt;，则 xxx,yyy,aaa,bbb 均会生效。如果要覆盖，需配置：&lt;dubbo:service filter=”-xxx,-yyy,aaa,bbb” /&gt;</li>
+</ul>
+<p>接口com.alibaba.dubbo.rpc.Filter<br>扩展配置<br>&lt;dubbo:reference filter= “xxx,yyy” /&gt;   <!-- 消费方调用过程拦截 --><br>&lt;dubbo:consumer filter= “xxx,yyy” /&gt;   <!-- 消费方调用过程缺省拦截器，将拦截所有reference --><br>&lt;dubbo:service filter= “xxx,yyy” /&gt;       <!-- 提供方调用过程拦截 --><br>&lt;dubbo:provider filter= “xxx,yyy” /&gt;      <!-- 提供方调用过程缺省拦截器，将拦截所有service --><br>已知扩展<br>com.alibaba.dubbo.rpc.filter.EchoFilter<br>com.alibaba.dubbo.rpc.filter.GenericFilter<br>com.alibaba.dubbo.rpc.filter.GenericImplFilter<br>com.alibaba.dubbo.rpc.filter.TokenFilter<br>com.alibaba.dubbo.rpc.filter.AccessLogFilter<br>com.alibaba.dubbo.rpc.filter.CountFilter<br>com.alibaba.dubbo.rpc.filter.ActiveLimitFilter<br>com.alibaba.dubbo.rpc.filter.ClassLoaderFilter<br>com.alibaba.dubbo.rpc.filter.ContextFilter<br>com.alibaba.dubbo.rpc.filter.ConsumerContextFilter<br>com.alibaba.dubbo.rpc.filter.ExceptionFilter<br>com.alibaba.dubbo.rpc.filter.ExecuteLimitFilter<br>com.alibaba.dubbo.rpc.filter.DeprecatedFilter</p>
+<p>总结得比较简单，摘自我的培训课件，适合根据这个文章来做分享，欢迎大家一起交流。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2019/08/03/浅谈dubbo微服务/" data-id="cjyuyshdf0000ifs6rvk20lvp" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2019/07/26/深入理解volatile/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">深入理解volatile</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2019/08/03/浅谈dubbo微服务/">浅谈dubbo微服务</a>
+          </li>
+        
+          <li>
+            <a href="/2019/07/26/深入理解volatile/">深入理解volatile</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2019 池元嘉<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+
+
+  </div>
+</body>
+</html>
